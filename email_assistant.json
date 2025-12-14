@@ -1,0 +1,205 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "99ed77c9-1bf0-42c8-80f8-a611ee177d4d",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.snippet }}",
+        "options": {
+          "systemMessage": "YouYou are an assistant that reads the content of an email and determines whether it is urgent. An email is considered urgent if it requires immediate attention, quick action, or a prompt response.\n\nInstructions:\n\nRead the body of the email.\n\nRespond with “Urgent” if the email requires immediate action, or “Not Urgent” if it does not.\n\nOptionally, provide 1–2 words explaining why it is urgent.\n\nExample:\nEmail body: \"Please approve the budget report by 5 PM today.\"\nResponse: Urgent – deadline\n\nEmail body: \"Just checking in to see how things are going.\"\nResponse: Not Urgent are a helpful assistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c62b49bc-a187-4a10-88b6-a1504831dc7c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        208
+      ],
+      "id": "fca798ea-cf05-44e0-bbfa-3658f9861f7a",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.threadId }}",
+        "contextWindowLength": 25
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        208
+      ],
+      "id": "4c7aabdb-685e-4327-9af2-e29ea443ad0c",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "CATEGORY_UPDATES"
+        ]
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        368,
+        208
+      ],
+      "id": "8ea9bbfe-876b-437d-a063-ddfb0b23508b",
+      "name": "Add label to message in Gmail",
+      "webhookId": "webhook_id",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CExb9vN8nV93SbnE",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "YOUR_TEAM_EMAIL_HERE",
+        "subject": "Urgent Support",
+        "message": "={{ $json.output }}{{ $('Gmail Trigger').item.json.From }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "86293ceb-2843-49da-9e02-66b5e3ffcfcb",
+      "name": "Send a message",
+      "webhookId": "f95da95d-bbde-426e-a75d-99b11e661b38",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CExb9vN8nV93SbnE",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3394af33-1d8b-49a7-9827-a095038dcc9d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "Instance_id"
+  },
+  "id": "uPXWZANa02sSr4ix",
+  "tags": []
+}
